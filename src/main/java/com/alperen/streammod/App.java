@@ -25,7 +25,7 @@ public class App
             Thread t = new Thread(runnable);
             t.start();
             */
-        	FFMpegTest.StreamVideo("/home/nycrera/recording.mp4","127.0.0.1","1234");
+        	//FFMpegTest.StreamVideo("/home/nycrera/recording.mp4","127.0.0.1","1234");
 
         	
 		} catch (Exception e) {
