@@ -2,7 +2,6 @@ package com.alperen.streammod;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -10,6 +9,12 @@ import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber.Exception;
 
+/**
+ * <p>
+ * Uses FFMpeg to stream a local video file over the RTP Protocol. Supports
+ * multiple clients.
+ * </p>
+ */
 public class VideoStreamer {
 
 	List<StreamClient> clientList = new ArrayList<StreamClient>();
@@ -23,16 +28,19 @@ public class VideoStreamer {
 		AddNewClient(clientip, clientport);
 	}
 
-	// This does not check if client is already in the list so thats on you.
+	/**
+	 * <p>
+	 * Adds a new client to the list. Using this method you can stream this video to
+	 * multiple clients at the same time. This does not check if client is already
+	 * in the list so thats on you.
+	 * </p>
+	 */
 	public void AddNewClient(String clientip, String clientport)
 			throws org.bytedeco.javacv.FFmpegFrameRecorder.Exception {
-		if (!ValidateData(clientip, clientport))
+		if (!Util.ValidateData(clientip, clientport))
 			throw new IllegalArgumentException();
 		StreamClient client = new StreamClient(clientip, clientport);
 
-		// TODO: I should probably construct these URIs better with some checks etc.
-		// Just
-		// concatenating looks kind of messy.
 		// Eclipse warns me of a resource leak, but as I close these streams that
 		// doesn't really makes sense.
 		FFmpegFrameRecorder recorder = new FFmpegFrameRecorder("rtp://" + clientip + ":" + clientport,
@@ -41,16 +49,20 @@ public class VideoStreamer {
 		recorder.setFormat("rtp");
 		recorder.setFrameRate(30);
 		recorder.setVideoBitrate(8 * 1024 * 1024); // 8MBPS
-		recorder.start(); // WARNING: TEST IF THIS WORKS THEN REMOVE THIS COMMENT. THIS MAY BE THE CAUSE
-							// OF SOME FUTURE PROBLEMS.
+		recorder.start();
+
 		client.recorder = recorder;
 
 		clientList.add(client);
 	}
 
-	// Starts the video streaming thread, also starting the play of video to all
-	// clients.
-	public void Play() {
+	/**
+	 * <p>
+	 * Starts the video streaming thread, also starting the play of video to all
+	 * clients.
+	 * </p>
+	 */
+	public void Start() {
 		running = true;
 
 		Runnable runnable = () -> { // Streaming Thread
@@ -86,8 +98,16 @@ public class VideoStreamer {
 		t.start();
 	}
 
-	// Time in milliseconds
-	public void Seek(long time) throws IllegalArgumentException, java.lang.Exception {
+	/**
+	 * Seeks to given time.
+	 * 
+	 * @param time Time to seek in the video, in milliseconds.
+	 * 
+	 * @throws IllegalArgumentException
+	 * 
+	 * @throws Exception
+	 */
+	public void Seek(long time) throws IllegalArgumentException, Exception {
 		if (time >= 0 && time * 1000 <= grabber.getLengthInTime()) {
 			grabber.setTimestamp(time * 1000); // In microseconds 1 (us) => 10^-3 (ms) => 10^-6 (s)
 			startTime = 0;
@@ -97,16 +117,25 @@ public class VideoStreamer {
 		}
 	}
 
+	/**
+	 * Pauses the video. This is done by sending the same frame over and over again,
+	 * to keep the stream alive.
+	 */
 	public void Pause() {
 		paused = true;
 	}
 
+	/**
+	 * Resumes a paused video.
+	 */
 	public void Resume() {
 		startTime = 0;
 		paused = false;
 	}
 
-	// Stop stream, grabber, recorder, close all.
+	/**
+	 * Stops the stream.
+	 */
 	public void Stop() {
 		try { // I do not expect any exceptions here to be thrown, so I will be catching them
 				// here.
@@ -120,12 +149,6 @@ public class VideoStreamer {
 		} catch (java.lang.Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	private static boolean ValidateData(final String ip, final String port) {
-		final Pattern IPPATTERN = Pattern
-				.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
-		return IPPATTERN.matcher(ip).matches() && port.matches("-?(0|[1-9]\\d*)");
 	}
 
 	private long startTime = 0;

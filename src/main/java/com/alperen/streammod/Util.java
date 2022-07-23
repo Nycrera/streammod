@@ -9,7 +9,17 @@ import java.util.regex.Pattern;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 
+// Utility class
 public class Util {
+
+	/**
+	 * Creates and SDP file for use in the rtp stream receiving. SDP file is created
+	 * on the tmp directory and will be deleted on exit.
+	 *
+	 * @param ip   String containing the IP address of the receiving client.
+	 * @param port String containing the Port number of the receiving client.
+	 * @throws IOException
+	 */
 	public static File CreateSDPFile(final String ip, final String port) throws IOException {
 		File TempSdpFile = File.createTempFile("streammod", ".sdp");
 		TempSdpFile.deleteOnExit(); // Deletes the temporary file on standard program exit.
@@ -19,12 +29,19 @@ public class Util {
 		return TempSdpFile;
 	}
 
+	// Validates IP and Port data.
 	public static boolean ValidateData(final String ip, final String port) {
 		final Pattern IPPATTERN = Pattern
 				.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 		return IPPATTERN.matcher(ip).matches() && port.matches("-?(0|[1-9]\\d*)");
 	}
 
+	/**
+	 * Gets and prints all of the metadata on a .mp4 file, for testing purposes.
+	 *
+	 * @param filename Full or relative path and filename to the .mp4 file.
+	 * @throws Exception
+	 */
 	public static void PrintMetadata(String filename) throws Exception {
 		FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(filename);
 		grabber.start();

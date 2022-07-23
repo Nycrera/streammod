@@ -10,6 +10,16 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
 
+/**
+ * <p>
+ * Uses FFMpeg to record a video stream over the RTP Protocol. It is important
+ * to set Width and Height properties, matching with the incoming stream.
+ * Defaults to 1920x1080.
+ * 
+ * It is a must for the StreamRecorder.Stop() to be called at the end of the
+ * stream. Otherwise resulting video file may be corrupted.
+ * </p>
+ */
 public class StreamRecorder {
 
 	public int Width = 1920;
@@ -25,6 +35,20 @@ public class StreamRecorder {
 	private long Period;
 	private int VideoPartCounter = 1;
 
+	/**
+	 * Initializes a StreamRecorder.
+	 *
+	 * @param ipaddress  String containing the IP address of the receiving client.
+	 * @param port       String containing the Port number of the receiving client.
+	 * @param folder     Full or relative path of the folder that will contain the
+	 *                   resulting video(s).
+	 * @param sourcename Name of the source display or the camera.
+	 * @param videoname  A custom name given by the user to this recording.
+	 * @param videoname  Priority of the video that will get added to metadata of
+	 *                   the video(s).
+	 * @throws IllegalArgumentException
+	 * @throws Exception
+	 */
 	StreamRecorder(String ipaddress, String port, String folder, String sourcename, String videoname, String priority,
 			long periodUs) throws IllegalArgumentException, Exception {
 		if (!Util.ValidateData(ipaddress, port)) {
@@ -41,6 +65,12 @@ public class StreamRecorder {
 
 	}
 
+	/**
+	 * Start the recording. It's usually better if this is ready before the stream
+	 * begins. But not mandatory.
+	 * 
+	 * @throws Exception
+	 */
 	public void Start() throws Exception {
 		Grabber = new FFmpegFrameGrabber(SDPFile.getAbsoluteFile());
 		Grabber.setOption("protocol_whitelist", "rtp,udp,file,crypto");
@@ -55,6 +85,20 @@ public class StreamRecorder {
 		RunFFMpegThread();
 	}
 
+	/**
+	 * Stops the player and saves the last video on disk. It is a must for this to
+	 * be called at the end of the stream. Otherwise video output may get corrupted.
+	 * 
+	 * @throws Exception
+	 */
+	public void Stop() throws Exception {
+		Running = false;
+		Grabber.stop();
+		Grabber.close();
+		Recorder.stop();
+		Recorder.close();
+	}
+
 	private void RunFFMpegThread() {
 		Runnable runnable = () -> { // FFMpeg Thread
 			try {
@@ -67,7 +111,7 @@ public class StreamRecorder {
 							VideoPartCounter++;
 							Recorder.stop();
 							Recorder.close();
-							
+
 							Recorder = CreateRecorder(GenerateName());
 						}
 						Recorder.record(frame);
@@ -80,15 +124,6 @@ public class StreamRecorder {
 
 		Thread t = new Thread(runnable);
 		t.start();
-	}
-	
-	// Calling this function is crucial so that mp4 file can be finished without any corruption.
-	public void Stop() throws Exception {
-		Running = false;
-		Grabber.stop();
-		Grabber.close();
-		Recorder.stop();
-		Recorder.close();
 	}
 
 	private String GenerateName() {
