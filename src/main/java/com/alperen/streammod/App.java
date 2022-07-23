@@ -2,8 +2,11 @@ package com.alperen.streammod;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.bytedeco.javacv.FFmpegLogCallback;
+import org.freedesktop.gstreamer.Gst;
 
 public class App 
 {
@@ -12,7 +15,34 @@ public class App
     {
         System.out.println( "Hello World!" );
         try {
-        	//GSTTest.StreamDesktop(args); //Stream desktop to RTP Code
+        	
+        	/*
+        	StreamRecorder streamrec = new StreamRecorder("127.0.0.1","1234","/home/nycrera/","Desktop-1","CoolVid","Low", 30*1000*1000);
+        	streamrec.Start();
+        	
+        	*/
+        	
+        	/*
+        	GSTTest.StreamDesktop(args); //Stream desktop to RTP Code
+        	
+        	StreamPlayer player = new StreamPlayer("127.0.0.1","1234");
+        	player.Start();
+        	
+        	Timer timer = new Timer();
+        	timer.schedule(new TimerTask() {
+        		  @Override
+        		  public void run() {
+        		    try {
+						player.Stop();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+        		  }
+        		}, 25*1000);
+        	
+        	Gst.main();
+        	*/
+        	
         	//FFmpegLogCallback.set();
         	
         	//FFMpegTest.SaveStreamToFile("/home/nycrera/recording.mp4", "High");
@@ -27,6 +57,8 @@ public class App
             t.start();
             */
         	//FFMpegTest.StreamVideo("/home/nycrera/recording.mp4","127.0.0.1","1234");
+        	
+        	/*
         	VideoStreamer vs = new VideoStreamer("/home/nycrera/recording.mp4","127.0.0.1","1234");
         	vs.Play();
         	
@@ -60,7 +92,7 @@ public class App
             Thread t = new Thread(runnable);
             t.start();
         	
-        	
+        	*/
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

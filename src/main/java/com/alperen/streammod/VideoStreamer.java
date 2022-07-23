@@ -7,7 +7,6 @@ import java.util.regex.Pattern;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
-import org.bytedeco.javacv.FFmpegLogCallback;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber.Exception;
 
@@ -34,7 +33,8 @@ public class VideoStreamer {
 		// TODO: I should probably construct these URIs better with some checks etc.
 		// Just
 		// concatenating looks kind of messy.
-		// Eclispe warns me of a resource leak, but as I close these streams that doesn't really makes sense.
+		// Eclipse warns me of a resource leak, but as I close these streams that
+		// doesn't really makes sense.
 		FFmpegFrameRecorder recorder = new FFmpegFrameRecorder("rtp://" + clientip + ":" + clientport,
 				grabber.getImageWidth(), grabber.getImageHeight());
 		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
@@ -54,7 +54,6 @@ public class VideoStreamer {
 		running = true;
 
 		Runnable runnable = () -> { // Streaming Thread
-			FFmpegLogCallback.set();;
 			try {
 				Frame frame = null;
 
@@ -72,7 +71,8 @@ public class VideoStreamer {
 							client.recorder.record(frame);
 						}
 					} else {
-						// Video has finished, if you want to replay you will need to restart the grabber, recorders etc.
+						// Video has finished, if you want to replay you will need to restart the
+						// grabber, recorders etc.
 						// or create another VideoStreamer.
 						Stop();
 					}
@@ -91,7 +91,7 @@ public class VideoStreamer {
 		if (time >= 0 && time * 1000 <= grabber.getLengthInTime()) {
 			grabber.setTimestamp(time * 1000); // In microseconds 1 (us) => 10^-3 (ms) => 10^-6 (s)
 			startTime = 0;
-		}else {
+		} else {
 			throw new IllegalArgumentException("Seeking time must be within time limits of the video. Video Length:"
 					+ (grabber.getLengthInTime() / 1000));
 		}
@@ -100,22 +100,24 @@ public class VideoStreamer {
 	public void Pause() {
 		paused = true;
 	}
-	
+
 	public void Resume() {
+		startTime = 0;
 		paused = false;
 	}
-	
+
 	// Stop stream, grabber, recorder, close all.
 	public void Stop() {
-		try { // I do not expect any exceptions here to be thrown, so I will be catching them here.
-		grabber.stop();
-		grabber.close();
-		for (StreamClient client : clientList) {
-			client.recorder.stop();
-			client.recorder.close();
-		}
-		running = false;
-		}catch(java.lang.Exception e) {
+		try { // I do not expect any exceptions here to be thrown, so I will be catching them
+				// here.
+			grabber.stop();
+			grabber.close();
+			for (StreamClient client : clientList) {
+				client.recorder.stop();
+				client.recorder.close();
+			}
+			running = false;
+		} catch (java.lang.Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -125,32 +127,27 @@ public class VideoStreamer {
 				.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 		return IPPATTERN.matcher(ip).matches() && port.matches("-?(0|[1-9]\\d*)");
 	}
-	
-	
-	private long startTime=0;
-	private long frameCounter=0;
-	private Frame customGrabAtFrameRate() throws Exception, InterruptedException{
-	       Frame frame = grabber.grab();
-	        if (frame != null) {
-	            customWaitForTimestamp(frame);
-	        }
-	        return frame;
+
+	private long startTime = 0;
+
+	private Frame customGrabAtFrameRate() throws Exception, InterruptedException {
+		Frame frame = grabber.grab();
+		if (frame != null) {
+			customWaitForTimestamp(frame);
+		}
+		return frame;
 	}
-	
-	private boolean customWaitForTimestamp (Frame frame) throws InterruptedException {
-		/*if(paused) {
-			grabber.setVideoFrameNumber();
-			return false;
-		}*/
-        if (startTime == 0) {
-            startTime = System.nanoTime() / 1000 - frame.timestamp;
-        } else {
-            long delay = frame.timestamp - (System.nanoTime() / 1000 - startTime);
-            if (delay > 0) {
-                Thread.sleep(delay / 1000, (int)(delay % 1000) * 1000);
-                return true;
-            }
-        }
-        return false;
+
+	private boolean customWaitForTimestamp(Frame frame) throws InterruptedException {
+		if (startTime == 0) {
+			startTime = System.nanoTime() / 1000 - frame.timestamp;
+		} else {
+			long delay = frame.timestamp - (System.nanoTime() / 1000 - startTime);
+			if (delay > 0) {
+				Thread.sleep(delay / 1000, (int) (delay % 1000) * 1000);
+				return true;
+			}
+		}
+		return false;
 	}
 }
