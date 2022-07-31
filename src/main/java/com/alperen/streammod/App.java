@@ -3,34 +3,53 @@ package com.alperen.streammod;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegLogCallback;
 
 public class App {
 
 	public static void main(String[] args) {
-		FFmpegLogCallback.set(); // Sets FFMpeg to direct its logs.
-
+		
+		//FFmpegLogCallback.set(); // Sets FFMpeg to direct its logs.
+		try {
+			FFmpegFrameGrabber.tryLoad();
+		} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e1) {
+			e1.printStackTrace();
+		}
+		
 		System.out.println("Run tests with test numbers! :");
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-
+		
 		try {
 			switch (br.readLine()) {
-			case "1": // 1) Stream Screen recording to 127.0.0.1, receive and display.
+			// Test 1 !!CURRENTLY BROKEN!!
+			case "1": // 1) Stream Screen recording to 127.0.0.1, receive and display. 
 				StreamPlayer player = new StreamPlayer("127.0.0.1", "1234");
-				ScreenStreamer streamer = new ScreenStreamer("127.0.0.1", "1234");
+				ScreenStreamerAlt streamer = new ScreenStreamerAlt("127.0.0.1","1234");
 				player.Start();
 				streamer.Start();
-
+				
 				System.out.println("Press enter to stop...");
 				br.readLine();
 				player.Stop();
 				streamer.Stop();
 				break;
-
-			case "2": // 2) Stream Screen recording to 127.0.0.1, receive and save to video.
+				
+			case "2": // 2) Stream Screen recording using Gstream to 127.0.0.1, receive and display.
+				StreamPlayer player2 = new StreamPlayer("127.0.0.1","1234");
+				ScreenStreamer streamer3 = new ScreenStreamer("127.0.0.1","1234");
+				player2.Start();
+				streamer3.Start();
+				System.out.println("Press enter to stop...");
+				br.readLine();
+				player2.Stop();
+				streamer3.Stop();
+				break;
+				
+			case "3": // 3) Stream Screen recording to 127.0.0.1, receive and save to video.
 				StreamRecorder streamrec = new StreamRecorder("127.0.0.1", "1234", "/home/nycrera/", "Desktop-1",
-						"recording", "High", 30 * 1000 * 1000);
-				ScreenStreamer streamer2 = new ScreenStreamer("127.0.0.1", "1234");
+						"recording2", "High", 30 * 1000 * 1000);
+				ScreenStreamerAlt streamer2 = new ScreenStreamerAlt("127.0.0.1", "1234");
 				streamrec.Start();
 				streamer2.Start();
 				System.out.println("Press enter to stop...");
@@ -39,10 +58,10 @@ public class App {
 				streamer2.Stop();
 				break;
 
-			case "3": // 3) Stream a video on disk, receive and display.
-				StreamPlayer player2 = new StreamPlayer("127.0.0.1", "1234");
+			case "4": // 4) Stream a video on disk, receive and display.
+				StreamPlayer player3 = new StreamPlayer("127.0.0.1", "1234");
 				VideoStreamer vs = new VideoStreamer("/home/nycrera/recording.mp4", "127.0.0.1", "1234");
-				player2.Start();
+				player3.Start();
 				vs.Start();
 				System.out.println("use commands e-> exit, s-> seek, p-> pause, r-> resume");
 				commandloop: while (true) {
@@ -52,7 +71,7 @@ public class App {
 						break;
 					case "e":
 						vs.Stop();
-						player2.Stop();
+						player3.Stop();
 						break commandloop;
 					case "p":
 						vs.Pause();

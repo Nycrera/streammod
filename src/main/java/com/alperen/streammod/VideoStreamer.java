@@ -77,7 +77,7 @@ public class VideoStreamer {
 						}
 						continue;
 					} // else
-					frame = customGrabAtFrameRate(); // WHEN WE SEEK THIS DOES NOT CHANGE THE TIME
+					frame = customGrabAtFrameRate();
 					if (frame != null) {
 						for (StreamClient client : clientList) {
 							client.recorder.record(frame);
@@ -89,7 +89,8 @@ public class VideoStreamer {
 						Stop();
 					}
 				}
-			} catch (java.lang.Exception e) {
+			}
+			catch (java.lang.Exception e) {
 				e.printStackTrace();
 			}
 		};
@@ -139,13 +140,13 @@ public class VideoStreamer {
 	public void Stop() {
 		try { // I do not expect any exceptions here to be thrown, so I will be catching them
 				// here.
+			running = false;
 			grabber.stop();
 			grabber.close();
 			for (StreamClient client : clientList) {
 				client.recorder.stop();
 				client.recorder.close();
 			}
-			running = false;
 		} catch (java.lang.Exception e) {
 			e.printStackTrace();
 		}

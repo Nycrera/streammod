@@ -30,7 +30,7 @@ public class ScreenStreamer {
 			Gst.init(Version.BASELINE);
 
 		pipeline = (Pipeline) Gst
-				.parseLaunch("ximagesrc ! video/x-raw,framerate=30/1 ! timeoverlay ! videoconvert ! x264enc ! "
+				.parseLaunch("ximagesrc ! video/x-raw,framerate=30/1 ! videoconvert ! x264enc ! "
 						+ "video/x-h264,profile=baseline ! h264parse config-interval=-1 ! rtph264pay pt=96 config-interval=-1 ! udpsink host="
 						+ ipaddress + " port=" + port + " sync=false");
 	}

@@ -24,7 +24,16 @@ public class Util {
 		File TempSdpFile = File.createTempFile("streammod", ".sdp");
 		TempSdpFile.deleteOnExit(); // Deletes the temporary file on standard program exit.
 		FileWriter writer = new FileWriter(TempSdpFile);
-		writer.write("c=IN IP4 " + ip + "\n" + "m=video " + port + " RTP/AVP 96 \n" + "a=rtpmap:96 H264/90000");
+		writer.write("v=0\n"
+				+ "o=- 0 0 IN IP4 "+ ip +"\n"
+				+ "s=No Name\n"
+				+ "c=IN IP4 "+ ip +"\n"
+				+ "t=0 0\n"
+				+ "a=tool:libavformat 55.2.100\n"
+				+ "m=video "+ port +" RTP/AVP 96\n"
+				+ "a=rtpmap:96 H264/90000\n"
+				+ "a=fmtp:96 packetization-mode=1");
+		//writer.write("c=IN IP4 " + ip + "\n" + "m=video " + port + " RTP/AVP 96 \n" + "a=rtpmap:96 H264/90000");
 		writer.close();
 		return TempSdpFile;
 	}

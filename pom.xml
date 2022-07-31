@@ -29,6 +29,7 @@
     <artifactId>gst1-java-core</artifactId>
     <version>1.4.0</version>
 </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.bytedeco/javacv -->
 <dependency>
     <groupId>org.bytedeco</groupId>
