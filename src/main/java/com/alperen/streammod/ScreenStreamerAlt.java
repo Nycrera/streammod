@@ -1,7 +1,7 @@
 package com.alperen.streammod;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -10,10 +10,11 @@ import org.bytedeco.javacv.FFmpegFrameRecorder.Exception;
 import org.bytedeco.javacv.Frame;
 
 public class ScreenStreamerAlt {
-	List<StreamClient> clientList = new ArrayList<StreamClient>();
-	FFmpegFrameGrabber grabber;
-	public int Width = 1920;
-	public int Height = 1080;
+	FFmpegFrameGrabber videoGrabber;
+	FFmpegFrameGrabber audioGrabber;
+	FFmpegFrameRecorder recorder;
+	public int Width = 1280;
+	public int Height = 720;
 	public int DisplayId = 0;
 	boolean running = false;
 
@@ -28,36 +29,68 @@ public class ScreenStreamerAlt {
 	 * @throws GstException
 	 */
 	ScreenStreamerAlt(String ipaddress, String port) throws java.lang.Exception {
-		grabber = new FFmpegFrameGrabber(":"+ DisplayId + ".0");
-		grabber.setFormat("x11grab");
-		grabber.setFrameRate(30);
-		grabber.setImageWidth(Width);
-		grabber.setImageHeight(Height);
-		grabber.start();
-		AddNewClient(ipaddress, port);
+		videoGrabber = new FFmpegFrameGrabber("/dev/video0");
+		videoGrabber.setFormat("v4l2");
+		videoGrabber.setOption("input_format", "mjpeg");
+
+		videoGrabber.setFrameRate(30);
+		videoGrabber.setImageWidth(Width);
+		videoGrabber.setImageHeight(Height);
+		videoGrabber.start();
+
+		audioGrabber = new FFmpegFrameGrabber("hw:0");
+		audioGrabber.setFormat("alsa");
+		audioGrabber.start();
+
+		recorder = new FFmpegFrameRecorder("rtp://127.0.0.1:1234", videoGrabber.getImageWidth(),
+				videoGrabber.getImageHeight(), audioGrabber.getAudioChannels());
+		recorder.setFormat("rtp_mpegts");
+
+		// Key frame interval, in our case every 2 seconds -> 30 (fps) * 2 = 60
+		// (gop length)
+		recorder.setGopSize(60);
+		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+		recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+		recorder.setSampleRate(audioGrabber.getSampleRate());
+		recorder.setVideoBitrate(1 * 1000 * 1000);
+		recorder.setAudioBitrate(48 * 1000);
+		recorder.setFrameRate(30);
 	}
 
 	/**
 	 * Start the streaming.
+	 * @throws Exception 
 	 */
-	public void Start() {
+	public void Start() throws Exception {
 		running = true;
+		recorder.start();
 
-		Runnable runnable = () -> { // Streaming Thread
+		Runnable runnable = () -> { // Video Streaming Thread
 			try {
-				Frame frame = null;
+				Frame videoFrame;
 				while (running) { // Streaming loop
-					frame = grabber.grabAtFrameRate(); // WHEN WE SEEK THIS DOES NOT CHANGE THE TIME
-					if (frame != null) {
-						for (StreamClient client : clientList) {
-							client.recorder.record(frame);
-						}
+					videoFrame = videoGrabber.grabAtFrameRate();
+					if (videoFrame != null) {
+						recorder.record(videoFrame);
 					}
 				}
 			} catch (java.lang.Exception e) {
 				e.printStackTrace();
 			}
 		};
+
+		ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
+		exec.scheduleAtFixedRate(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					recorder.recordSamples(audioGrabber.getSampleRate(), audioGrabber.getAudioChannels(),
+							audioGrabber.grabSamples().samples);
+				} catch (java.lang.Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}, 0, (long) 1000 / 30, TimeUnit.MILLISECONDS);
 
 		Thread t = new Thread(runnable);
 		t.start();
@@ -67,45 +100,14 @@ public class ScreenStreamerAlt {
 	 * Stop the streaming.
 	 */
 	public void Stop() {
-		try { // I do not expect any exceptions here to be thrown, so I will be catching them
-				// here.
+		try {
 			running = false;
-			grabber.stop();
-			grabber.close();
-			for (StreamClient client : clientList) {
-				client.recorder.stop();
-				client.recorder.close();
-			}
+			videoGrabber.stop();
+			videoGrabber.close();
+			recorder.stop();
+			recorder.close();
 		} catch (java.lang.Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	/**
-	 * <p>
-	 * Adds a new client to the list. Using this method you can stream this video to
-	 * multiple clients at the same time. This does not check if client is already
-	 * in the list so thats on you.
-	 * </p>
-	 */
-	public void AddNewClient(String clientip, String clientport)
-			throws org.bytedeco.javacv.FFmpegFrameRecorder.Exception {
-		if (!Util.ValidateData(clientip, clientport))
-			throw new IllegalArgumentException();
-		StreamClient client = new StreamClient(clientip, clientport);
-
-		// Eclipse warns me of a resource leak, but as I close these streams that
-		// doesn't really makes sense.
-		FFmpegFrameRecorder recorder = new FFmpegFrameRecorder("rtp://" + clientip + ":" + clientport,
-				grabber.getImageWidth(), grabber.getImageHeight());
-		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-		recorder.setFormat("rtp");
-		recorder.setFrameRate(30);
-		recorder.setVideoBitrate(8 * 1024 * 1024); // 8MBPS
-		recorder.start();
-
-		client.recorder = recorder;
-
-		clientList.add(client);
 	}
 }

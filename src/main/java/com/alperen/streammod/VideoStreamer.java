@@ -48,7 +48,7 @@ public class VideoStreamer {
 		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
 		recorder.setFormat("rtp");
 		recorder.setFrameRate(30);
-		recorder.setVideoBitrate(8 * 1024 * 1024); // 8MBPS
+		recorder.setVideoBitrate(8 * 1000 * 1000); // 8MBPS
 		recorder.start();
 
 		client.recorder = recorder;
