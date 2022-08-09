@@ -3,12 +3,15 @@ package com.alperen.streammod;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.FFmpegLogCallback;
 
 public class App implements ExitCallback {
 
 	public static void main(String[] args) {
-		//FFmpegLogCallback.set(); // Sets FFMpeg to direct its logs.
+		FFmpegLogCallback.set(); // Sets FFMpeg to direct its logs.
+		//FFmpegLogCallback.setLevel(avutil.AV_LOG_ERROR);
 		try {
 			FFmpegFrameGrabber.tryLoad();
 		} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e1) {
@@ -35,9 +38,9 @@ public class App implements ExitCallback {
 				
 			case "2": // 2) Stream Screen recording using Gstream to 127.0.0.1, receive and display.
 				StreamPlayer player2 = new StreamPlayer("127.0.0.1","1234");
-				ScreenStreamer streamer3 = new ScreenStreamer("127.0.0.1","1234");
-				player2.Start();
+				ScreenStreamer streamer3 = new ScreenStreamer("127.0.0.1","1234",false);
 				streamer3.Start();
+				player2.Start();
 				System.out.println("Press enter to stop...");
 				br.readLine();
 				player2.Stop();
@@ -47,7 +50,7 @@ public class App implements ExitCallback {
 			case "3": // 3) Stream Screen recording to 127.0.0.1, receive and save to video.
 				StreamRecorder streamrec = new StreamRecorder("127.0.0.1", "1234", "/home/nycrera/", "Desktop-1",
 						"recording2", "High", 30 * 1000 * 1000);
-				ScreenStreamer streamer2 = new ScreenStreamer("127.0.0.1", "1234");
+				ScreenStreamer streamer2 = new ScreenStreamer("127.0.0.1", "1234",true);
 				streamrec.Start();
 				streamer2.Start();
 				System.out.println("Press enter to stop...");

@@ -21,18 +21,23 @@ public class ScreenStreamer {
 	 * @throws IllegalArgumentException
 	 * @throws GstException
 	 */
-	ScreenStreamer(String ipaddress, String port) {
+	ScreenStreamer(String ipaddress, String port, boolean enableVAAPI) {
 		if (!Util.ValidateData(ipaddress, port)) {
 			throw new IllegalArgumentException();
 		}
-
+	       
 		if (!Gst.isInitialized())
-			Gst.init(Version.BASELINE);
-
-		pipeline = (Pipeline) Gst
-				.parseLaunch("ximagesrc ! video/x-raw,framerate=30/1 ! videoconvert ! x264enc ! "
-						+ "video/x-h264,profile=baseline ! h264parse config-interval=-1 ! rtph264pay pt=96 config-interval=-1 ! udpsink host="
-						+ ipaddress + " port=" + port + " sync=false");
+			Gst.init(Version.of(1, 20));
+		if (!enableVAAPI) {
+			pipeline = (Pipeline) Gst.parseLaunch("ximagesrc ! video/x-raw,framerate=30/1 ! timeoverlay ! videoconvert ! x264enc ! "
+					+ "video/x-h264,profile=baseline ! h264parse config-interval=-1 ! mpegtsmux name=m ! rtpmp2tpay ! udpsink host="
+					+ ipaddress + " port=" + port + " sync=false alsasrc device=hw:0 ! audioconvert ! fdkaacenc ! m.");
+		} else {
+			pipeline = (Pipeline) Gst.parseLaunch(
+					"ximagesrc ! video/x-raw,framerate=30/1 ! timeoverlay ! videoconvert ! vaapih264enc ! queue ! h264parse config-interval=-1 ! "
+							+ "mpegtsmux name=m ! rtpmp2tpay ! udpsink host=" + ipaddress + " port=" + port
+							+ " sync=false alsasrc device=hw:0 ! audioconvert ! fdkaacenc ! m.");
+		}
 	}
 
 	/**

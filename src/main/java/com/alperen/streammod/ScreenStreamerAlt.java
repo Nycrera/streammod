@@ -4,6 +4,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.bytedeco.ffmpeg.global.avcodec;
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.FFmpegFrameRecorder.Exception;
@@ -46,10 +47,18 @@ public class ScreenStreamerAlt {
 				videoGrabber.getImageHeight(), audioGrabber.getAudioChannels());
 		recorder.setFormat("rtp_mpegts");
 
+
+		recorder.setOption("hwaccel", "vaapi");
+		recorder.setOption("hwaccel_device", "/dev/dri/renderD128");
+		recorder.setOption("hwaccel_output_format", "vaapi");
+		recorder.setOption("vf", "scale_vaapi=format=nv12");
+		
 		// Key frame interval, in our case every 2 seconds -> 30 (fps) * 2 = 60
 		// (gop length)
 		recorder.setGopSize(60);
-		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+		//recorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+		recorder.setVideoCodecName("hevc_vaapi");
+		recorder.setPixelFormat(avutil.AV_PIX_FMT_VAAPI);
 		recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
 		recorder.setSampleRate(audioGrabber.getSampleRate());
 		recorder.setVideoBitrate(1 * 1000 * 1000);

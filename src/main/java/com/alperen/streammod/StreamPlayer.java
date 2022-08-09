@@ -1,6 +1,12 @@
 package com.alperen.streammod;
 
-import java.io.File;
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.SourceDataLine;
 
 import org.bytedeco.javacv.CanvasFrame;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -36,8 +42,8 @@ public class StreamPlayer {
 			throw new IllegalArgumentException();
 		}
 
-		File SDPFile = Util.CreateSDPFile("127.0.0.1", "1234");
-		Grabber = new FFmpegFrameGrabber(SDPFile.getAbsoluteFile());
+
+		Grabber = new FFmpegFrameGrabber("rtp://"+ipaddress+":"+port);
 
 		Grabber.setOption("protocol_whitelist", "rtp,udp,file,crypto");
 		Grabber.setFrameRate(30);
@@ -53,11 +59,10 @@ public class StreamPlayer {
 	public void Start() throws Exception {
 		Grabber.setImageWidth(Width);
 		Grabber.setImageHeight(Height);
-
+		//Grabber.setFormat("mpegts");
 		Running = true;
 		Grabber.start();
 		Canvas = new CanvasFrame("Stream", CanvasFrame.getDefaultGamma() / Grabber.getGamma());
-
 		RunFFMpegThread();
 	}
 
@@ -76,11 +81,34 @@ public class StreamPlayer {
 	private void RunFFMpegThread() {
 		Runnable runnable = () -> { // FFMpeg Thread
 			try {
+                final SourceDataLine soundLine;
+				final AudioFormat audioFormat = new AudioFormat(44100, 16, 2, true, true);
+
+		        final DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
+		        soundLine = (SourceDataLine) AudioSystem.getLine(info);
+		        soundLine.open(audioFormat);
+		        soundLine.start();
+		        
+				
 				Frame frame = null;
 				while (Running) {
 					frame = Grabber.grab();
-					if (frame != null) {
+					if (frame.image != null) {
 						Canvas.showImage(frame);
+					}
+					if(frame.samples != null) {
+                        final ShortBuffer channelSamplesShortBuffer = (ShortBuffer) frame.samples[0];
+                        channelSamplesShortBuffer.rewind();
+
+                        final ByteBuffer outBuffer = ByteBuffer.allocate(channelSamplesShortBuffer.capacity() * 2);
+
+                        for (int i = 0; i < channelSamplesShortBuffer.capacity(); i++) {
+                            short val = channelSamplesShortBuffer.get(i);
+                            outBuffer.putShort(val);
+                        }
+                        soundLine.write(outBuffer.array(), 0, outBuffer.capacity());
+                        outBuffer.clear();
+
 					}
 				}
 			} catch (Exception e) {
