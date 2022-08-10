@@ -17,24 +17,28 @@ public class ScreenStreamerAlt {
 	public int Width = 1280;
 	public int Height = 720;
 	public int DisplayId = 0;
+	public int FPS = 30;
 	boolean running = false;
 
+	ScheduledThreadPoolExecutor AudioThread;
+
 	/**
-	 * Initializes a ScreenStreamer
+	 * Initializes a ScreenStreamer with FFMpeg
 	 *
-	 * @param ipaddress String containing the IP address of the receiving client.
-	 * @param port      String containing the Port number of the receiving client.
+	 * @param ipaddress   String containing the IP address of the receiving client.
+	 * @param port        String containing the Port number of the receiving client.
+	 * @param enableVAAPI Defines whether the video acceleration is used or not.
 	 * @throws Exception
 	 * @throws java.lang.Exception
 	 * @throws IllegalArgumentException
 	 * @throws GstException
 	 */
-	ScreenStreamerAlt(String ipaddress, String port) throws java.lang.Exception {
+	ScreenStreamerAlt(String ipaddress, String port, boolean enableVAAPI) throws java.lang.Exception {
 		videoGrabber = new FFmpegFrameGrabber("/dev/video0");
 		videoGrabber.setFormat("v4l2");
 		videoGrabber.setOption("input_format", "mjpeg");
 
-		videoGrabber.setFrameRate(30);
+		videoGrabber.setFrameRate(FPS);
 		videoGrabber.setImageWidth(Width);
 		videoGrabber.setImageHeight(Height);
 		videoGrabber.start();
@@ -47,18 +51,21 @@ public class ScreenStreamerAlt {
 				videoGrabber.getImageHeight(), audioGrabber.getAudioChannels());
 		recorder.setFormat("rtp_mpegts");
 
-
-		recorder.setOption("hwaccel", "vaapi");
-		recorder.setOption("hwaccel_device", "/dev/dri/renderD128");
-		recorder.setOption("hwaccel_output_format", "vaapi");
-		recorder.setOption("vf", "scale_vaapi=format=nv12");
-		
+		if (enableVAAPI) {
+			recorder.setOption("hwaccel", "vaapi");
+			recorder.setOption("hwaccel_device", "/dev/dri/renderD128");
+			recorder.setOption("hwaccel_output_format", "vaapi");
+			recorder.setOption("vf", "scale_vaapi=format=nv12");
+			recorder.setVideoCodecName("hevc_vaapi");
+			recorder.setPixelFormat(avutil.AV_PIX_FMT_VAAPI);
+		} else {
+			recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+		}
 		// Key frame interval, in our case every 2 seconds -> 30 (fps) * 2 = 60
 		// (gop length)
 		recorder.setGopSize(60);
-		//recorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
-		recorder.setVideoCodecName("hevc_vaapi");
-		recorder.setPixelFormat(avutil.AV_PIX_FMT_VAAPI);
+		// recorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+
 		recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
 		recorder.setSampleRate(audioGrabber.getSampleRate());
 		recorder.setVideoBitrate(1 * 1000 * 1000);
@@ -68,7 +75,8 @@ public class ScreenStreamerAlt {
 
 	/**
 	 * Start the streaming.
-	 * @throws Exception 
+	 * 
+	 * @throws Exception
 	 */
 	public void Start() throws Exception {
 		running = true;
@@ -88,8 +96,8 @@ public class ScreenStreamerAlt {
 			}
 		};
 
-		ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
-		exec.scheduleAtFixedRate(new Runnable() {
+		AudioThread = new ScheduledThreadPoolExecutor(1);
+		AudioThread.scheduleAtFixedRate(new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -99,7 +107,7 @@ public class ScreenStreamerAlt {
 					e.printStackTrace();
 				}
 			}
-		}, 0, (long) 1000 / 30, TimeUnit.MILLISECONDS);
+		}, 0, (long) 1000 / FPS, TimeUnit.MILLISECONDS);
 
 		Thread t = new Thread(runnable);
 		t.start();

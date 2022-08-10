@@ -1,7 +1,5 @@
 package com.alperen.streammod;
 
-import java.io.File;
-
 interface ExitCallback {
 	void onExit();
 }
@@ -16,8 +14,7 @@ public class VlcStreamPlayer {
 			throw new IllegalArgumentException();
 		}
 
-		File SDPFile = Util.CreateSDPFile("127.0.0.1", "1234");
-		vlcpb = new ProcessBuilder("vlc", SDPFile.getAbsoluteFile().toString());
+		vlcpb = new ProcessBuilder("vlc", "rtp://"+ipaddress+":"+port);
 	}
 
 	/**

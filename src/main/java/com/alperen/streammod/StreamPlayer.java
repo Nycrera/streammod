@@ -14,7 +14,7 @@ import org.bytedeco.javacv.Frame;
 
 /**
  * <p>
- * Uses FFMpeg to play a video stream over the RTP Protocol. It is important to
+ * Uses FFMpeg to play a video/audio stream over the RTP Protocol. It is important to
  * set Width and Height properties matching with the incoming stream. Defaults
  * to 1920x1080.
  * </p>
@@ -52,14 +52,13 @@ public class StreamPlayer {
 
 	/**
 	 * Start the player. It's usually better if player is ready before the stream
-	 * begins. But not mandatory.
+	 * begins. But not mandatory. It might take a while for stream to be actually played, because of a keyframe being awaited.
 	 * 
 	 * @throws Exception
 	 */
 	public void Start() throws Exception {
 		Grabber.setImageWidth(Width);
 		Grabber.setImageHeight(Height);
-		//Grabber.setFormat("mpegts");
 		Running = true;
 		Grabber.start();
 		Canvas = new CanvasFrame("Stream", CanvasFrame.getDefaultGamma() / Grabber.getGamma());

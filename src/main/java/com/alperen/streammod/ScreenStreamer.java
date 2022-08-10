@@ -3,6 +3,7 @@ package com.alperen.streammod;
 import org.freedesktop.gstreamer.Gst;
 import org.freedesktop.gstreamer.Pipeline;
 import org.freedesktop.gstreamer.Version;
+import org.freedesktop.gstreamer.glib.GLib;
 
 /**
  * <p>
@@ -14,10 +15,11 @@ public class ScreenStreamer {
 	private Pipeline pipeline;
 
 	/**
-	 * Initializes a ScreenStreamer
+	 * Initializes a ScreenStreamer with Gstreamer
 	 *
-	 * @param ipaddress String containing the IP address of the receiving client.
-	 * @param port      String containing the Port number of the receiving client.
+	 * @param ipaddress   String containing the IP address of the receiving client.
+	 * @param port        String containing the Port number of the receiving client.
+	 * @param enableVAAPI Defines whether the video acceleration is used or not.
 	 * @throws IllegalArgumentException
 	 * @throws GstException
 	 */
@@ -25,13 +27,15 @@ public class ScreenStreamer {
 		if (!Util.ValidateData(ipaddress, port)) {
 			throw new IllegalArgumentException();
 		}
-	       
+		GLib.setEnv("GST_DEBUG", "4", true);
 		if (!Gst.isInitialized())
 			Gst.init(Version.of(1, 20));
 		if (!enableVAAPI) {
-			pipeline = (Pipeline) Gst.parseLaunch("ximagesrc ! video/x-raw,framerate=30/1 ! timeoverlay ! videoconvert ! x264enc ! "
-					+ "video/x-h264,profile=baseline ! h264parse config-interval=-1 ! mpegtsmux name=m ! rtpmp2tpay ! udpsink host="
-					+ ipaddress + " port=" + port + " sync=false alsasrc device=hw:0 ! audioconvert ! fdkaacenc ! m.");
+			pipeline = (Pipeline) Gst
+					.parseLaunch("ximagesrc ! video/x-raw,framerate=30/1 ! timeoverlay ! videoconvert ! x264enc ! "
+							+ "video/x-h264,profile=baseline ! h264parse config-interval=-1 ! mpegtsmux name=m ! rtpmp2tpay ! udpsink host="
+							+ ipaddress + " port=" + port
+							+ " sync=false alsasrc device=hw:0 ! audioconvert ! fdkaacenc ! m.");
 		} else {
 			pipeline = (Pipeline) Gst.parseLaunch(
 					"ximagesrc ! video/x-raw,framerate=30/1 ! timeoverlay ! videoconvert ! vaapih264enc ! queue ! h264parse config-interval=-1 ! "

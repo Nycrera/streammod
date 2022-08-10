@@ -24,16 +24,11 @@ public class Util {
 		File TempSdpFile = File.createTempFile("streammod", ".sdp");
 		TempSdpFile.deleteOnExit(); // Deletes the temporary file on standard program exit.
 		FileWriter writer = new FileWriter(TempSdpFile);
-		writer.write("v=0\n"
-				+ "o=- 0 0 IN IP4 "+ ip +"\n"
-				+ "s=No Name\n"
-				+ "c=IN IP4 "+ ip +"\n"
-				+ "t=0 0\n"
-				+ "a=tool:libavformat 55.2.100\n"
-				+ "m=video "+ port +" RTP/AVP 96\n"
-				+ "a=rtpmap:96 H264/90000\n"
+		writer.write("v=0\n" + "o=- 0 0 IN IP4 " + ip + "\n" + "s=No Name\n" + "c=IN IP4 " + ip + "\n" + "t=0 0\n"
+				+ "a=tool:libavformat 55.2.100\n" + "m=video " + port + " RTP/AVP 96\n" + "a=rtpmap:96 H264/90000\n"
 				+ "a=fmtp:96 packetization-mode=1");
-		//writer.write("c=IN IP4 " + ip + "\n" + "m=video " + port + " RTP/AVP 96 \n" + "a=rtpmap:96 H264/90000");
+		// writer.write("c=IN IP4 " + ip + "\n" + "m=video " + port + " RTP/AVP 96 \n" +
+		// "a=rtpmap:96 H264/90000");
 		writer.close();
 		return TempSdpFile;
 	}
@@ -43,6 +38,37 @@ public class Util {
 		final Pattern IPPATTERN = Pattern
 				.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 		return IPPATTERN.matcher(ip).matches() && port.matches("-?(0|[1-9]\\d*)");
+	}
+
+	/**
+	 * Gets priority level from the metadata of a media file. If the priority is not
+	 * set returns null.
+	 *
+	 * @param filename Full or relative path and filename to the .mp4 file.
+	 * @throws Exception
+	 */
+	public static String GetPriortityLevel(String filename) throws Exception {
+		FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(filename);
+		grabber.start();
+
+		Map<String, String> metadataMap = grabber.getMetadata();
+		String comment = metadataMap.get("comment");
+		grabber.stop();
+		grabber.close();
+
+		if (comment != null) {
+	        String[] keyVals = comment.trim().split(",");
+	        for(String keyVal:keyVals)
+	        {
+	          String[] parts = keyVal.trim().split("=",1);
+	          if(parts[0] == "priority") {
+	        	return parts[1];  
+	          }
+	        }
+	        return null;
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -62,4 +88,5 @@ public class Util {
 		grabber.stop();
 		grabber.close();
 	}
+
 }

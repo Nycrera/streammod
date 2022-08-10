@@ -15,14 +15,14 @@ import org.bytedeco.javacv.FrameGrabber.Exception;
  * multiple clients.
  * </p>
  */
-public class VideoStreamer {
+public class VideoStreamerAlt {
 
 	List<StreamClient> clientList = new ArrayList<StreamClient>();
 	FFmpegFrameGrabber grabber;
 	boolean running = false;
 	boolean paused = false;
 
-	VideoStreamer(String filename, String clientip, String clientport) throws java.lang.Exception {
+	VideoStreamerAlt(String filename, String clientip, String clientport) throws java.lang.Exception {
 		grabber = new FFmpegFrameGrabber(filename);
 		grabber.start();
 		AddNewClient(clientip, clientport);
