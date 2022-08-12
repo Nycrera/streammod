@@ -57,11 +57,9 @@ public class StreamPlayer {
 	 * @throws Exception
 	 */
 	public void Start() throws Exception {
-		Grabber.setImageWidth(Width);
-		Grabber.setImageHeight(Height);
+		//Grabber.setImageWidth(Width);
+		//Grabber.setImageHeight(Height);
 		Running = true;
-		Grabber.start();
-		Canvas = new CanvasFrame("Stream", CanvasFrame.getDefaultGamma() / Grabber.getGamma());
 		RunFFMpegThread();
 	}
 
@@ -80,6 +78,8 @@ public class StreamPlayer {
 	private void RunFFMpegThread() {
 		Runnable runnable = () -> { // FFMpeg Thread
 			try {
+				Grabber.start();
+				Canvas = new CanvasFrame("Stream", CanvasFrame.getDefaultGamma() / Grabber.getGamma());
                 final SourceDataLine soundLine;
 				final AudioFormat audioFormat = new AudioFormat(44100, 16, 2, true, true);
 
@@ -92,6 +92,7 @@ public class StreamPlayer {
 				Frame frame = null;
 				while (Running) {
 					frame = Grabber.grab();
+					if(frame != null) {
 					if (frame.image != null) {
 						Canvas.showImage(frame);
 					}
@@ -109,7 +110,12 @@ public class StreamPlayer {
                         outBuffer.clear();
 
 					}
+				}else{
+					// possible that the stream has ended.
+					
 				}
+				}
+					
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

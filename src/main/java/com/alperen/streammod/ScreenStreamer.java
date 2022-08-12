@@ -27,7 +27,7 @@ public class ScreenStreamer {
 		if (!Util.ValidateData(ipaddress, port)) {
 			throw new IllegalArgumentException();
 		}
-		GLib.setEnv("GST_DEBUG", "4", true);
+		//GLib.setEnv("GST_DEBUG", "4", true);
 		if (!Gst.isInitialized())
 			Gst.init(Version.of(1, 20));
 		if (!enableVAAPI) {

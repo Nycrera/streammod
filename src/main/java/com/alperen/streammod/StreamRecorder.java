@@ -1,6 +1,8 @@
 package com.alperen.streammod;
 
 import java.io.File;
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,7 +27,6 @@ public class StreamRecorder {
 	public int Width = 1920;
 	public int Height = 1080;
 	private boolean Running = false;
-	private File SDPFile;
 	private FFmpegFrameGrabber Grabber;
 	private FFmpegFrameRecorder Recorder;
 	private String VideoFolder;
@@ -44,8 +45,9 @@ public class StreamRecorder {
 	 *                   resulting video(s).
 	 * @param sourcename Name of the source display or the camera.
 	 * @param videoname  A custom name given by the user to this recording.
-	 * @param videoname  Priority of the video that will get added to metadata of
+	 * @param priority   Priority of the video that will get added to metadata of
 	 *                   the video(s).
+	 * @param periodUs   Period to separate files. In microseconds.
 	 * @throws IllegalArgumentException
 	 * @throws Exception
 	 */
@@ -61,7 +63,8 @@ public class StreamRecorder {
 		this.Priority = priority;
 		this.Period = periodUs;
 
-		SDPFile = Util.CreateSDPFile(ipaddress, port);
+		Grabber = new FFmpegFrameGrabber("rtp://" + ipaddress + ":" + port);
+		Grabber.setOption("protocol_whitelist", "rtp,udp,file,crypto");
 
 	}
 
@@ -72,15 +75,14 @@ public class StreamRecorder {
 	 * @throws Exception
 	 */
 	public void Start() throws Exception {
-		Grabber = new FFmpegFrameGrabber(SDPFile.getAbsoluteFile());
-		Grabber.setOption("protocol_whitelist", "rtp,udp,file,crypto");
+		Running = true;
 		Grabber.setFrameRate(30);
 		Grabber.setImageWidth(Width);
 		Grabber.setImageHeight(Height);
-		Running = true;
 		Grabber.start();
 
 		Recorder = CreateRecorder(GenerateName());
+		Recorder.start();
 
 		RunFFMpegThread();
 	}
@@ -105,17 +107,22 @@ public class StreamRecorder {
 				Frame frame = null;
 				while (Running) {
 					frame = Grabber.grab();
-					if (frame != null) {
-						if (Grabber.getTimestamp() > (VideoPartCounter * Period)) { // All time here are in
-																					// microseconds.
-							VideoPartCounter++;
-							Recorder.stop();
-							Recorder.close();
+					if (Grabber.getTimestamp() > (VideoPartCounter * Period)) { // All time here are in
+						// microseconds.
+						VideoPartCounter++;
+						Recorder.stop();
+						Recorder.close();
 
-							Recorder = CreateRecorder(GenerateName());
-						}
+						Recorder = CreateRecorder(GenerateName());
+						Recorder.start();
+					}
+					if (frame.image != null) {
 						Recorder.record(frame);
 					}
+					if (frame.samples != null) {
+						Recorder.recordSamples(Grabber.getSampleRate(), Grabber.getAudioChannels(), frame.samples);
+					}
+
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -138,9 +145,11 @@ public class StreamRecorder {
 		recorder.setFormat("mp4");
 		recorder.setFrameRate(30);
 		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+		recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+		recorder.setAudioChannels(Grabber.getAudioChannels());
+		recorder.setSampleRate(Grabber.getSampleRate());
 
 		recorder.setMetadata("comment", "priority=" + Priority);
-		recorder.start();
 
 		return recorder;
 	}

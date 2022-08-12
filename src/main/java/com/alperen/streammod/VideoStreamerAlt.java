@@ -15,10 +15,14 @@ import org.bytedeco.javacv.FrameGrabber.Exception;
  * multiple clients.
  * </p>
  */
+
+
+// CURRENTLY CRASHES ON RESUME OPERATION AS MPEGTS is having problems with non monotonically increasing timestamps. 
 public class VideoStreamerAlt {
 
 	List<StreamClient> clientList = new ArrayList<StreamClient>();
 	FFmpegFrameGrabber grabber;
+	long pausedTimestamp = 0;
 	boolean running = false;
 	boolean paused = false;
 
@@ -44,11 +48,15 @@ public class VideoStreamerAlt {
 		// Eclipse warns me of a resource leak, but as I close these streams that
 		// doesn't really makes sense.
 		FFmpegFrameRecorder recorder = new FFmpegFrameRecorder("rtp://" + clientip + ":" + clientport,
-				grabber.getImageWidth(), grabber.getImageHeight());
+				grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
 		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-		recorder.setFormat("rtp");
+		recorder.setFormat("rtp_mpegts");
 		recorder.setFrameRate(30);
-		recorder.setVideoBitrate(8 * 1000 * 1000); // 8MBPS
+		recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+		recorder.setSampleRate(grabber.getSampleRate());
+		recorder.setVideoBitrate(1 * 1000 * 1000);
+		recorder.setAudioBitrate(48 * 1000);
+		recorder.setGopSize(60);
 		recorder.start();
 
 		client.recorder = recorder;
@@ -79,9 +87,18 @@ public class VideoStreamerAlt {
 					} // else
 					frame = customGrabAtFrameRate();
 					if (frame != null) {
-						for (StreamClient client : clientList) {
-							client.recorder.record(frame);
+						if(frame.image != null) {
+							for (StreamClient client : clientList) {
+								client.recorder.record(frame);
+							}
 						}
+						if(frame.samples != null) {
+							for (StreamClient client : clientList) {
+								client.recorder.recordSamples(grabber.getSampleRate(), grabber.getAudioChannels(), frame.samples);
+							}
+						}
+						
+						
 					} else {
 						// Video has finished, if you want to replay you will need to restart the
 						// grabber, recorders etc.
@@ -110,7 +127,8 @@ public class VideoStreamerAlt {
 	 */
 	public void Seek(long time) throws IllegalArgumentException, Exception {
 		if (time >= 0 && time * 1000 <= grabber.getLengthInTime()) {
-			grabber.setTimestamp(time * 1000); // In microseconds 1 (us) => 10^-3 (ms) => 10^-6 (s)
+			//grabber.setTimestamp(time * 1000); // In microseconds 1 (us) => 10^-3 (ms) => 10^-6 (s)
+			grabber.setTimestamp(time * 1000, true);
 			startTime = 0;
 		} else {
 			throw new IllegalArgumentException("Seeking time must be within time limits of the video. Video Length:"
@@ -123,15 +141,25 @@ public class VideoStreamerAlt {
 	 * to keep the stream alive.
 	 */
 	public void Pause() {
+		if(!paused) {
+		pausedTimestamp = grabber.getTimestamp();
 		paused = true;
+		}
 	}
 
 	/**
 	 * Resumes a paused video.
+	 * @throws java.lang.Exception 
 	 */
-	public void Resume() {
+	public void Resume() throws java.lang.Exception {
+		if(paused) {
 		startTime = 0;
+		grabber.setTimestamp(pausedTimestamp);
+		for (StreamClient client : clientList) {
+			client.recorder.setTimestamp(pausedTimestamp);
+		}
 		paused = false;
+		}
 	}
 
 	/**

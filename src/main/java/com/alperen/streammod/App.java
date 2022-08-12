@@ -3,6 +3,7 @@ package com.alperen.streammod;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegLogCallback;
 
@@ -11,7 +12,7 @@ public class App implements ExitCallback {
 	public static void main(String[] args) {
 		FFmpegLogCallback.set(); // Sets FFMpeg to direct its logs.
 		
-		//FFmpegLogCallback.setLevel(avutil.AV_LOG_ERROR);
+		FFmpegLogCallback.setLevel(avutil.AV_LOG_ERROR);
 		try {
 			FFmpegFrameGrabber.tryLoad();
 		} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e1) {
@@ -25,14 +26,14 @@ public class App implements ExitCallback {
 			switch (br.readLine()) {
 			// Test 1
 			case "1": // 1) Stream Screen recording to 127.0.0.1, receive and display. 
-				//StreamPlayer player = new StreamPlayer("127.0.0.1", "1234");
+				StreamPlayer player = new StreamPlayer("127.0.0.1", "1234");
 				ScreenStreamerAlt streamer = new ScreenStreamerAlt("127.0.0.1","1234",false);
-				//player.Start();
 				streamer.Start();
+				player.Start();
 				
 				System.out.println("Press enter to stop...");
 				br.readLine();
-				//player.Stop();
+				player.Stop();
 				streamer.Stop();
 				break;
 				
@@ -49,8 +50,8 @@ public class App implements ExitCallback {
 				
 			case "3": // 3) Stream Screen recording to 127.0.0.1, receive and save to video.
 				StreamRecorder streamrec = new StreamRecorder("127.0.0.1", "1234", "/home/nycrera/", "Desktop-1",
-						"recording2", "High", 30 * 1000 * 1000);
-				ScreenStreamer streamer2 = new ScreenStreamer("127.0.0.1", "1234",true);
+						"recordgst", "Medium", 30 * 1000 * 1000);
+				ScreenStreamerAlt streamer2 = new ScreenStreamerAlt("127.0.0.1", "1234",false);
 				streamrec.Start();
 				streamer2.Start();
 				System.out.println("Press enter to stop...");
@@ -61,9 +62,9 @@ public class App implements ExitCallback {
 
 			case "4": // 4) Stream a video on disk, receive and display.
 				StreamPlayer player3 = new StreamPlayer("127.0.0.1", "1234");
-				VideoStreamerAlt vs = new VideoStreamerAlt("/home/nycrera/recording.mp4", "127.0.0.1", "1234");
-				player3.Start();
+				VideoStreamerAlt vs = new VideoStreamerAlt("/home/nycrera/test2.mp4", "127.0.0.1", "1234");
 				vs.Start();
+				player3.Start();
 				System.out.println("use commands e-> exit, s-> seek, p-> pause, r-> resume");
 				commandloop: while (true) {
 					switch (br.readLine()) {

@@ -52,11 +52,11 @@ public class ScreenStreamerAlt {
 		recorder.setFormat("rtp_mpegts");
 
 		if (enableVAAPI) {
-			recorder.setOption("hwaccel", "vaapi");
-			recorder.setOption("hwaccel_device", "/dev/dri/renderD128");
-			recorder.setOption("hwaccel_output_format", "vaapi");
-			recorder.setOption("vf", "scale_vaapi=format=nv12");
-			recorder.setVideoCodecName("hevc_vaapi");
+			recorder.setVideoOption("hwaccel", "vaapi");
+			recorder.setVideoOption("hwaccel_device", "/dev/dri/renderD128");
+			recorder.setVideoOption("hwaccel_output_format", "vaapi");
+			recorder.setVideoOption("vf", "scale_vaapi=format=nv12");
+			recorder.setVideoCodecName("h264_vaapi");
 			recorder.setPixelFormat(avutil.AV_PIX_FMT_VAAPI);
 		} else {
 			recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
