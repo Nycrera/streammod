@@ -8,6 +8,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 
+import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.javacv.CanvasFrame;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
@@ -22,8 +23,6 @@ import org.bytedeco.javacv.Frame;
 public class StreamPlayer {
 	private FFmpegFrameGrabber Grabber;
 	private CanvasFrame Canvas;
-	public int Width = 1920;
-	public int Height = 1080;
 	private boolean Running = false;
 
 	/*
@@ -46,6 +45,9 @@ public class StreamPlayer {
 		Grabber = new FFmpegFrameGrabber("rtp://"+ipaddress+":"+port);
 
 		Grabber.setOption("protocol_whitelist", "rtp,udp,file,crypto");
+		Grabber.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+		Grabber.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+		
 		Grabber.setFrameRate(30);
 
 	}
@@ -57,8 +59,6 @@ public class StreamPlayer {
 	 * @throws Exception
 	 */
 	public void Start() throws Exception {
-		//Grabber.setImageWidth(Width);
-		//Grabber.setImageHeight(Height);
 		Running = true;
 		RunFFMpegThread();
 	}

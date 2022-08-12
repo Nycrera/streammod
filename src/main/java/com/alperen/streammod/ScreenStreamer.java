@@ -32,8 +32,8 @@ public class ScreenStreamer {
 			Gst.init(Version.of(1, 20));
 		if (!enableVAAPI) {
 			pipeline = (Pipeline) Gst
-					.parseLaunch("ximagesrc ! video/x-raw,framerate=30/1 ! timeoverlay ! videoconvert ! x264enc ! "
-							+ "video/x-h264,profile=baseline ! h264parse config-interval=-1 ! mpegtsmux name=m ! rtpmp2tpay ! udpsink host="
+					.parseLaunch("ximagesrc ! video/x-raw,framerate=30/1 ! timeoverlay ! videoconvert ! x264enc "
+							+ " mpegtsmux name=m ! rtpmp2tpay ! udpsink host="
 							+ ipaddress + " port=" + port
 							+ " sync=false alsasrc device=hw:0 ! audioconvert ! fdkaacenc ! m.");
 		} else {

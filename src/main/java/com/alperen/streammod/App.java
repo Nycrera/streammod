@@ -10,9 +10,9 @@ import org.bytedeco.javacv.FFmpegLogCallback;
 public class App implements ExitCallback {
 
 	public static void main(String[] args) {
+		FFmpegLogCallback.setLevel(avutil.AV_LOG_INFO);
 		FFmpegLogCallback.set(); // Sets FFMpeg to direct its logs.
-		
-		FFmpegLogCallback.setLevel(avutil.AV_LOG_ERROR);
+
 		try {
 			FFmpegFrameGrabber.tryLoad();
 		} catch (org.bytedeco.javacv.FFmpegFrameGrabber.Exception e1) {
@@ -27,7 +27,7 @@ public class App implements ExitCallback {
 			// Test 1
 			case "1": // 1) Stream Screen recording to 127.0.0.1, receive and display. 
 				StreamPlayer player = new StreamPlayer("127.0.0.1", "1234");
-				ScreenStreamerAlt streamer = new ScreenStreamerAlt("127.0.0.1","1234",false);
+				ScreenStreamerAlt streamer = new ScreenStreamerAlt("127.0.0.1","1234",true);
 				streamer.Start();
 				player.Start();
 				
@@ -51,7 +51,7 @@ public class App implements ExitCallback {
 			case "3": // 3) Stream Screen recording to 127.0.0.1, receive and save to video.
 				StreamRecorder streamrec = new StreamRecorder("127.0.0.1", "1234", "/home/nycrera/", "Desktop-1",
 						"recordgst", "Medium", 30 * 1000 * 1000);
-				ScreenStreamerAlt streamer2 = new ScreenStreamerAlt("127.0.0.1", "1234",false);
+				ScreenStreamer streamer2 = new ScreenStreamer("127.0.0.1", "1234",true);
 				streamrec.Start();
 				streamer2.Start();
 				System.out.println("Press enter to stop...");
@@ -86,7 +86,6 @@ public class App implements ExitCallback {
 					}
 				}
 				break;
-
 			default:
 				System.out.println("Test case not found!");
 			}

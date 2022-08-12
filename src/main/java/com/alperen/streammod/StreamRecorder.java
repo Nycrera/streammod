@@ -34,6 +34,7 @@ public class StreamRecorder {
 	private String SourceName;
 	private String Priority;
 	private long Period;
+	private long StartTimestamp = 0;
 	private int VideoPartCounter = 1;
 
 	/**
@@ -79,10 +80,6 @@ public class StreamRecorder {
 		Grabber.setFrameRate(30);
 		Grabber.setImageWidth(Width);
 		Grabber.setImageHeight(Height);
-		Grabber.start();
-
-		Recorder = CreateRecorder(GenerateName());
-		Recorder.start();
 
 		RunFFMpegThread();
 	}
@@ -104,10 +101,14 @@ public class StreamRecorder {
 	private void RunFFMpegThread() {
 		Runnable runnable = () -> { // FFMpeg Thread
 			try {
+				Grabber.start();
+				Recorder = CreateRecorder(GenerateName());
+				Recorder.start();
 				Frame frame = null;
 				while (Running) {
 					frame = Grabber.grab();
-					if (Grabber.getTimestamp() > (VideoPartCounter * Period)) { // All time here are in
+					StartTimestamp = StartTimestamp == 0 ? Grabber.getTimestamp() : StartTimestamp;
+					if (Grabber.getTimestamp() > (StartTimestamp + VideoPartCounter * Period)) { // All time here are in
 						// microseconds.
 						VideoPartCounter++;
 						Recorder.stop();
@@ -141,7 +142,7 @@ public class StreamRecorder {
 
 	private FFmpegFrameRecorder CreateRecorder(String filename) throws Exception {
 		FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(filename, Grabber.getImageWidth(),
-				Grabber.getImageHeight());
+				Grabber.getImageHeight(), Grabber.getAudioChannels());
 		recorder.setFormat("mp4");
 		recorder.setFrameRate(30);
 		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);

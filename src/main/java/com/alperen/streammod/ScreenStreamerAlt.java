@@ -37,7 +37,7 @@ public class ScreenStreamerAlt {
 		videoGrabber = new FFmpegFrameGrabber("/dev/video0");
 		videoGrabber.setFormat("v4l2");
 		videoGrabber.setOption("input_format", "mjpeg");
-
+		
 		videoGrabber.setFrameRate(FPS);
 		videoGrabber.setImageWidth(Width);
 		videoGrabber.setImageHeight(Height);
@@ -71,6 +71,7 @@ public class ScreenStreamerAlt {
 		recorder.setVideoBitrate(1 * 1000 * 1000);
 		recorder.setAudioBitrate(48 * 1000);
 		recorder.setFrameRate(30);
+		//recorder.setInterleaved(true);
 	}
 
 	/**
@@ -121,6 +122,8 @@ public class ScreenStreamerAlt {
 			running = false;
 			videoGrabber.stop();
 			videoGrabber.close();
+			audioGrabber.stop();
+			audioGrabber.close();
 			recorder.stop();
 			recorder.close();
 		} catch (java.lang.Exception e) {
