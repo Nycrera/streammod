@@ -62,7 +62,7 @@ public class App implements ExitCallback {
 
 			case "4": // 4) Stream a video on disk, receive and display.
 				StreamPlayer player3 = new StreamPlayer("127.0.0.1", "1234");
-				VideoStreamerAlt vs = new VideoStreamerAlt("/home/nycrera/test2.mp4", "127.0.0.1", "1234");
+				VideoStreamer vs = new VideoStreamer("/home/nycrera/recordgst_Desktop-1_2022-08-13_01-33-33.mp4", "127.0.0.1", "1234");
 				vs.Start();
 				player3.Start();
 				System.out.println("use commands e-> exit, s-> seek, p-> pause, r-> resume");

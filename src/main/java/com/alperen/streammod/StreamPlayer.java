@@ -24,6 +24,7 @@ public class StreamPlayer {
 	private FFmpegFrameGrabber Grabber;
 	private CanvasFrame Canvas;
 	private boolean Running = false;
+	private boolean Paused = false;
 
 	/*
 	 * Initializes a StreamPlayer.
@@ -62,7 +63,27 @@ public class StreamPlayer {
 		Running = true;
 		RunFFMpegThread();
 	}
-
+	
+	/**
+	 * Pauses the player
+	 * 
+	 * @throws Exception
+	 */
+	public void Pause() throws Exception {
+		Paused = true;
+	}
+	
+	
+	/**
+	 * Resumes the player
+	 * 
+	 * @throws Exception
+	 */
+	public void Resume() throws Exception {
+		Paused = false;
+	}
+	
+	
 	/**
 	 * Stops the player
 	 * 
@@ -91,6 +112,7 @@ public class StreamPlayer {
 				
 				Frame frame = null;
 				while (Running) {
+					if(Paused) continue;
 					frame = Grabber.grab();
 					if(frame != null) {
 					if (frame.image != null) {

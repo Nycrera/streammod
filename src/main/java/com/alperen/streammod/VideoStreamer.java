@@ -14,7 +14,7 @@ import org.freedesktop.gstreamer.Version;
  * </p>
  */
 public class VideoStreamer {
-	public boolean enableVAAPI = false;
+	public boolean enableVAAPI = true;
 	public boolean reEncode = true;
 
 	private Pipeline pipeline;
@@ -22,7 +22,7 @@ public class VideoStreamer {
 	VideoStreamer(String filename, String clientip, String clientport) throws java.lang.Exception {
 		if (!Util.ValidateData(clientip, clientport))
 			throw new IllegalArgumentException();
-		//GLib.setEnv("GST_DEBUG", "4", true);
+		// GLib.setEnv("GST_DEBUG", "4", true);
 		if (!Gst.isInitialized())
 			Gst.init(Version.of(1, 20));
 		if (!enableVAAPI) {
@@ -31,28 +31,28 @@ public class VideoStreamer {
 					+ clientip + " port=" + clientport);
 		} else {
 			pipeline = (Pipeline) Gst.parseLaunch(
-					"filesrc name=fsrc ! decodebin ! vaapih264enc ! queue ! h264parse config-interval=-1 ! "
-							+ "mpegtsmux name=m ! rtpmp2tpay ! udpsink host=" + clientip + " port=" + clientport
-							+ " sync=false fsrc. ! audioconvert ! fdkaacenc ! m.");
+					"mpegtsmux name=mx ! rtpmp2tpay ! udpsink host="+ clientip +" port="+ clientport +" filesrc name=fsrc ! qtdemux name=dmx dmx. ! queue ! aacparse ! faad ! audioresample ! audioconvert ! fdkaacenc ! mx. dmx. ! queue ! vaapih264dec ! vaapih264enc bitrate=1000 quality-level=2 ! queue ! h264parse config-interval=-1 ! mx.");
 		}
 		Element fileSource = pipeline.getElementByName("fsrc");
 		fileSource.set("location", filename);
 	}
+
 	/**
 	 * <p>
 	 * Starts the video streaming
 	 * </p>
 	 */
 	public void Start() {
-	pipeline.play();
+		pipeline.play();
 	}
-	
+
 	/**
 	 * Pauses the video.
 	 */
 	public void Pause() {
 		pipeline.pause();
 	}
+
 	/**
 	 * Seeks to given time.
 	 * 
@@ -72,7 +72,7 @@ public class VideoStreamer {
 	public void Resume() {
 		pipeline.play();
 	}
-	
+
 	public void Stop() {
 		pipeline.stop();
 	}
